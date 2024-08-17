@@ -64,7 +64,7 @@ jobs:
     if: ${{ github.ref_name == 'main' }}
     needs: ['python-ci']
     steps:
-      - name: Upload Python Artifact
+      - name: Download Python Artifact
         uses: actions/download-artifact@v4
         with:
           name: python-artifacts
