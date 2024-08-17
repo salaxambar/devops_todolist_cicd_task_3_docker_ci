@@ -10,9 +10,11 @@ on:
 
 env:
   PythonVersion: 3.8
+  DOCKER_IMAGE: todoapp
 
 jobs:
   python-ci:
+    name: Python CI
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -50,7 +52,32 @@ jobs:
           flake8 . --exit-zero --max-complexity=6
 
       - name: Upload python artifacts
+        if: ${{ github.ref_name == 'main' }}
         uses: actions/upload-artifact@v4
         with:
           name: python-artifacts
           path: .
+
+  docker-ci:
+    name: Docker CI
+    runs-on: ubuntu-latest
+    if: ${{ github.ref_name == 'main' }}
+    needs: ['python-ci']
+    steps:
+      - name: Upload Python Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: python-artifacts
+          path: .
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: ./src
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKER_IMAGE }}:${{ github.sha }}
+
